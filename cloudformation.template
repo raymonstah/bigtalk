@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  Profile:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: big-talk
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ecs-tasks.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "secrets"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "ssm:DescribeParameter*"
+                  - "ssm:GetParameter*"
+                Effect: "Allow"
+                Resource: "*"
+        - PolicyName: "dynamodb"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - !GetAtt QuestionsTable.Arn
+
+  QuestionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "question_id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "question_id"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+      TableName: "questions"
+
+
+  Poller:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main"
+      Role: !GetAtt Profile.Arn
+      Runtime: go1.x
+      Code:
+        S3Bucket: !Sub 'lambda-zips-${AWS::Region}'
+        S3Key: "asda"
