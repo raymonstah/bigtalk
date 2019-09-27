@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-
+Transform: 'AWS::Serverless-2016-10-31'
 Resources:
   Profile:
     Type: AWS::IAM::Role
@@ -52,12 +52,10 @@ Resources:
       TableName: "questions"
 
 
-  Poller:
-    Type: AWS::Lambda::Function
+  PollerFunction:
+    Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: "main"
-      Role: !GetAtt Profile.Arn
+      Handler: index.handler
       Runtime: go1.x
-      Code:
-        S3Bucket: !Sub 'lambda-zips-${AWS::Region}'
-        S3Key: "asda"
+      CodeUri: ./lambdas/poller
+      

@@ -2,16 +2,15 @@ package question
 
 import (
 	"context"
-	"time"
 )
 
 // Question is a high level entity that describes a question should look like
 type Question struct {
 	QuestionID   string
-	PostCount    int       `dynamo:"post_count"`
-	Question     string    `dynamo:"question"`
-	CreatedAt    time.Time `dynamo:"created_at"`
-	LastPostedAt time.Time `dynamo:"last_posted_at"`
+	PostCount    int
+	Question     string
+	CreatedAt    int64
+	LastPostedAt int64
 }
 
 // CreateQuestionInput is the input used to create a new Question

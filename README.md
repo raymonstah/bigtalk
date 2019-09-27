@@ -1,4 +1,4 @@
-#BigTalk
+# BigTalk
 
 inspired by [https://www.makebigtalk.com/](https://www.makebigtalk.com/)
 
@@ -11,7 +11,7 @@ Tools used:
 * Cloudformation (for managing cloud resources)
 * Twitter API (for posting to Twitter)
 * Instagram API (for posting to Instagram)
-* S3 / IAM for ops stuff
+* AWS SAM / S3 / IAM for ops stuff
 
 why?
 social media is often filled with negative content. if you're gonna be scrolling through instagram or twitter, here is some content that you may find helpful in connecting with people, or understanding yourself better.
