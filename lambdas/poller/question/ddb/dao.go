@@ -10,6 +10,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	postKey = "postKey"
+)
+
 // New returns a new DAO that can perform actions on the Questions entity
 func New(table dynamo.Table) *DAO {
 	return &DAO{
@@ -18,9 +22,12 @@ func New(table dynamo.Table) *DAO {
 }
 
 // Question is a database representation of a question
+// Its primary key is the question id
+// It also has a GSI of the PostKey / PostCount, where the Partition Key is constant
 type Question struct {
 	QuestionID   string `dynamo:"question_id,hash"`
-	PostCount    int    `dynamo:"post_count"`
+	PostKey      string `dynamo:"post_key" index:"poll-index,hash"` // always hardcoded to `postKey`
+	PostCount    int    `dynamo:"post_count" index:"poll-index,range"`
 	Question     string `dynamo:"question"`
 	CreatedAt    int64  `dynamo:"created_at"`
 	LastPostedAt int64  `dynamo:"last_posted_at"`
@@ -46,7 +53,30 @@ func (d *DAO) Get(ctx context.Context, questionID string) (question.Question, er
 
 // Poll a question that hasn't been yet polled, or a random one of the next lowest count
 func (d *DAO) Poll(ctx context.Context) (question.Question, error) {
-	return question.Question{}, nil
+	var result Question
+	err := d.questionTable.Get("post_key", postKey).
+		Index("poll-index").
+		Limit(1).
+		One(&result)
+	if err != nil {
+		return question.Question{}, xerrors.Errorf("unable to poll for question: %w", err)
+	}
+
+	return transform(result), nil
+}
+
+// Use a question by incrementing its post count and last posted at date
+func (d *DAO) Use(ctx context.Context, questionID string) error {
+	err := d.questionTable.
+		Update("question_id", questionID).
+		Add("post_count", 1).
+		Set("last_posted_at", time.Now().Unix()).
+		RunWithContext(ctx)
+	if err != nil {
+		return xerrors.Errorf("unable to use question: %w", err)
+	}
+
+	return nil
 }
 
 // Create a new question
@@ -55,6 +85,7 @@ func (d *DAO) Create(ctx context.Context, input question.CreateQuestionInput) (q
 
 	q := Question{
 		QuestionID:   ksuid.New().String(),
+		PostKey:      postKey,
 		PostCount:    0,
 		Question:     input.Question,
 		CreatedAt:    now,

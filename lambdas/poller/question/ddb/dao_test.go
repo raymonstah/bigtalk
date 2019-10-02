@@ -49,15 +49,44 @@ func TestQuestion(t *testing.T) {
 		input := question.CreateQuestionInput{
 			Question: "How are you doing today?",
 		}
+		// Create the question
 		q, err := dao.Create(ctx, input)
 		assert.Nil(t, err)
 		assert.Equal(t, input.Question, q.Question)
 		assert.NotNil(t, q.QuestionID)
 
+		// Find the question we just created
 		got, err := dao.Get(ctx, q.QuestionID)
 		assert.Nil(t, err)
 		assert.Equal(t, q.QuestionID, got.QuestionID)
-
 	})
+}
 
+func TestPoller(t *testing.T) {
+
+	withDAO(t, func(ctx context.Context, dao *DAO) {
+
+		input1 := question.CreateQuestionInput{
+			Question: "Question 1",
+		}
+		// Create the question
+		q1, err := dao.Create(ctx, input1)
+		assert.Nil(t, err)
+
+		input2 := question.CreateQuestionInput{
+			Question: "Question 2",
+		}
+		// Create the question
+		q2, err := dao.Create(ctx, input2)
+		assert.Nil(t, err)
+
+		// Use the first question
+		err = dao.Use(ctx, q1.QuestionID)
+		assert.Nil(t, err)
+
+		// Expect the second question since the first question has already been "used"
+		got, err := dao.Poll(ctx)
+		assert.Nil(t, err)
+		assert.Equal(t, q2.QuestionID, got.QuestionID)
+	})
 }
