@@ -2,29 +2,27 @@ package dao
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
-	"github.com/raymonstah/bigtalk/lambdas/poller/question"
+	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/tj/assert"
 )
 
 func withDAO(t *testing.T, callback func(ctx context.Context, dao *DAO)) {
-	session := session.Must(session.NewSession(aws.NewConfig().
+	sesh := session.Must(session.NewSession(aws.NewConfig().
 		WithRegion("us-west-2").
 		WithEndpoint("http://localhost:8000")))
 
-	// Use session
-	db := dynamo.New(session)
+	// Use sesh
+	db := dynamo.New(sesh)
 	ctx := context.Background()
 
 	// Create table
 	tableName := "question-blah"
 	err := db.CreateTable(tableName, Question{}).OnDemand(true).RunWithContext(ctx)
-	fmt.Println(err)
 	assert.Nil(t, err)
 	// Get table
 	table := db.Table(tableName)

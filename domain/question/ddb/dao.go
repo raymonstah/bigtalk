@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/guregu/dynamo"
-	"github.com/raymonstah/bigtalk/lambdas/poller/question"
+	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/xerrors"
 )

@@ -7,14 +7,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
-	"github.com/raymonstah/bigtalk/lambdas/poller/question"
-	dao "github.com/raymonstah/bigtalk/lambdas/poller/question/ddb"
+	"github.com/raymonstah/bigtalk/domain/question"
+	dao "github.com/raymonstah/bigtalk/domain/question/ddb"
 )
 
 func handleRequest(ctx context.Context) (string, error) {
-	session := session.Must(session.NewSession(aws.NewConfig()))
+	sesh := session.Must(session.NewSession(aws.NewConfig()))
 
-	poller := createQuestionPoller(session, "questions") // todo: use env variable
+	poller := createQuestionPoller(sesh, "questions") // todo: use env variable
 	q, err := poller.Poll(ctx)
 	if err != nil {
 		return "", err

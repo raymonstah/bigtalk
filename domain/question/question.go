@@ -18,6 +18,11 @@ type CreateQuestionInput struct {
 	Question string
 }
 
+// Creator allows for questions to be created
+type Creator interface {
+	Create(ctx context.Context, input CreateQuestionInput) (Question, error)
+}
+
 // Poller is an interface that helps retrieves questions
 type Poller interface {
 	// Poll a question that hasn't been polled yet
