@@ -11,11 +11,14 @@ import (
 	dao "github.com/raymonstah/bigtalk/domain/question/ddb"
 )
 
-func handleRequest(ctx context.Context) (string, error) {
-	sesh := session.Must(session.NewSession(aws.NewConfig()))
+// Handler contains everything needed to execute this lambda
+type Handler struct {
+	poller question.Poller
+}
 
-	poller := createQuestionPoller(sesh, "questions") // todo: use env variable
-	q, err := poller.Poll(ctx)
+// Handle polls for a question and returns it
+func (h *Handler) handle(ctx context.Context) (string, error) {
+	q, err := h.poller.Poll(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -31,5 +34,11 @@ func createQuestionPoller(session *session.Session, questionTableName string) qu
 }
 
 func main() {
-	lambda.Start(handleRequest)
+
+	s := session.Must(session.NewSession(aws.NewConfig()))
+	poller := createQuestionPoller(s, "questions")
+	handler := Handler{
+		poller: poller,
+	}
+	lambda.Start(handler.handle)
 }

@@ -55,7 +55,18 @@ Resources:
   PollerFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: index.handler
+      Policies:
+        - AWSLambdaExecute
+      Handler: poller
       Runtime: go1.x
-      CodeUri: ./lambdas/poller
+      CodeUri: ./functions/poller
+
+  PosterFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Policies:
+        - AWSLambdaExecute
+      Handler: poster
+      Runtime: go1.x
+      CodeUri: ./functions/poster
       

@@ -1,6 +1,8 @@
 package poster
 
+import "context"
+
 // Poster posts a the given content somewhere..
 type Poster interface {
-	Post(content []byte) error
+	Post(ctx context.Context, content []byte) error
 }
