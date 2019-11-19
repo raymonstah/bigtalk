@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -86,5 +87,15 @@ func TestPoller(t *testing.T) {
 		got, err := dao.Poll(ctx)
 		assert.Nil(t, err)
 		assert.Equal(t, q2.QuestionID, got.QuestionID)
+	})
+}
+
+func TestPoller_NoQuestions(t *testing.T) {
+	withDAO(t, func(ctx context.Context, dao *DAO) {
+		_, err := dao.Poll(ctx)
+		assert.NotNil(t, err)
+		isErrNotFound := errors.Is(err, dynamo.ErrNotFound)
+		assert.True(t, isErrNotFound)
+
 	})
 }

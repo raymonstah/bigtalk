@@ -6,7 +6,7 @@ import (
 	"github.com/raymonstah/bigtalk/domain/poster"
 	"github.com/raymonstah/bigtalk/domain/poster/twitter"
 	"golang.org/x/oauth2/clientcredentials"
-	"golang.org/x/xerrors"
+	"fmt"
 	"os"
 )
 
@@ -21,7 +21,7 @@ type Handler struct {
 func (h *Handler) handle(ctx context.Context, input Event) error {
 	err := h.poster.Post(ctx, []byte(input.Question))
 	if err != nil {
-		return xerrors.Errorf("error posting: %w", err)
+		return fmt.Errorf("error posting: %w", err)
 	}
 	return nil
 }

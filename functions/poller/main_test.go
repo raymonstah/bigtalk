@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/aws/aws-sdk-go/awstesting/mock"
+	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/tj/assert"
 	"testing"
@@ -22,12 +24,21 @@ func (m mockPoller) Poll(ctx context.Context) (question.Question, error) {
 	}, nil
 }
 
+
+type mockSQS struct {sqsiface.SQSAPI}
+func (m *mockSQS) SendMessage(*sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+	return nil, nil
+}
+
 func TestHandle(t *testing.T) {
-	handler := Handler{poller: &mockPoller{}}
+	handler := Handler{
+		poller:           &mockPoller{},
+		sqs:              &mockSQS{},
+		queueDestination: "question-queue",
+	}
 	ctx := context.Background()
-	q, err := handler.handle(ctx)
+	err := handler.handle(ctx)
 	assert.Nil(t, err)
-	assert.Equal(t, "How are you doing today?", q)
 }
 
 

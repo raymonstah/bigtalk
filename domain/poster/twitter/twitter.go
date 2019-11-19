@@ -3,7 +3,7 @@ package twitter
 import (
 	"context"
 	"github.com/dghubble/go-twitter/twitter"
-	"golang.org/x/xerrors"
+	"fmt"
 	"net/http"
 )
 
@@ -30,7 +30,7 @@ func New(httpclient *http.Client) Twitter {
 func (t Twitter) Post(ctx context.Context, content []byte) error {
 	_, _, err := t.client.Statuses.Update(string(content), nil)
 	if err != nil {
-		return xerrors.Errorf("error posting tweet: %w", err)
+		return fmt.Errorf("error posting tweet: %w", err)
 	}
 	return nil
 

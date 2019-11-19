@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,16 +17,29 @@ import (
 
 // Handler contains everything needed to execute this lambda
 type Handler struct {
-	poller question.Poller
+	poller           question.Poller
+	sqs              sqsiface.SQSAPI
+	queueDestination string
 }
 
 // Handle polls for a question and returns it
-func (h *Handler) handle(ctx context.Context) (string, error) {
+func (h *Handler) handle(ctx context.Context) error {
 	q, err := h.poller.Poll(ctx)
 	if err != nil {
-		return "", err
+		if errors.Is(err, dynamo.ErrNotFound) {
+			fmt.Println("no questions to poll for...")
+			return nil
+		}
+		return fmt.Errorf("unable to poll for new question: %w", err)
 	}
-	return q.Question, nil
+	_, err = h.sqs.SendMessage(&sqs.SendMessageInput{
+		MessageBody: aws.String(q.Question),
+		QueueUrl:    aws.String(h.queueDestination),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to send message to sqs: %w", err)
+	}
+	return nil
 }
 
 func createQuestionPoller(session *session.Session, questionTableName string) question.Poller {
@@ -37,8 +54,11 @@ func main() {
 
 	s := session.Must(session.NewSession(aws.NewConfig()))
 	poller := createQuestionPoller(s, "questions")
+	sqsclient := sqs.New(s)
 	handler := Handler{
-		poller: poller,
+		poller:           poller,
+		sqs:              sqsclient,
+		queueDestination: "questions-queue",
 	}
 	lambda.Start(handler.handle)
 }

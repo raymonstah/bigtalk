@@ -2,12 +2,12 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/guregu/dynamo"
 	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/segmentio/ksuid"
-	"golang.org/x/xerrors"
 )
 
 const (
@@ -45,8 +45,10 @@ func (d *DAO) Get(ctx context.Context, questionID string) (question.Question, er
 		Get("question_id", questionID).
 		Consistent(true).
 		OneWithContext(ctx, &result)
+
+
 	if err != nil {
-		return question.Question{}, xerrors.Errorf("unable to get question by question id ('%v'): %w", questionID, err)
+		return question.Question{}, fmt.Errorf("unable to get question by question id ('%v'): %w", questionID, err)
 	}
 	return transform(result), nil
 }
@@ -59,7 +61,7 @@ func (d *DAO) Poll(ctx context.Context) (question.Question, error) {
 		Limit(1).
 		One(&result)
 	if err != nil {
-		return question.Question{}, xerrors.Errorf("unable to poll for question: %w", err)
+		return question.Question{}, fmt.Errorf("unable to poll for question: %w", err)
 	}
 
 	return transform(result), nil
@@ -73,7 +75,7 @@ func (d *DAO) Use(ctx context.Context, questionID string) error {
 		Set("last_posted_at", time.Now().Unix()).
 		RunWithContext(ctx)
 	if err != nil {
-		return xerrors.Errorf("unable to use question: %w", err)
+		return fmt.Errorf("unable to use question: %w", err)
 	}
 
 	return nil
@@ -94,7 +96,7 @@ func (d *DAO) Create(ctx context.Context, input question.CreateQuestionInput) (q
 
 	err := d.questionTable.Put(q).RunWithContext(ctx)
 	if err != nil {
-		return question.Question{}, xerrors.Errorf("unable to create question: %w", err)
+		return question.Question{}, fmt.Errorf("unable to create question: %w", err)
 	}
 	return transform(q), nil
 }

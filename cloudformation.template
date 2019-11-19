@@ -1,16 +1,18 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: 'AWS::Serverless-2016-10-31'
 Resources:
-  Profile:
+  LambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: big-talk
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSLambdaExecute"
+      RoleName: big-talk-lambda
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: "Allow"
             Principal:
-              Service: "ecs-tasks.amazonaws.com"
+              Service: "lambda.amazonaws.com"
             Action: "sts:AssumeRole"
       Policies:
         - PolicyName: "secrets"
@@ -38,6 +40,16 @@ Resources:
                   - "dynamodb:Scan"
                 Resource:
                   - !GetAtt QuestionsTable.Arn
+                  - !Sub "${QuestionsTable.Arn}/index/*"
+        - PolicyName: "sqs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sqs:SendMessage"
+                Resource:
+                  - !GetAtt QuestionsQueue.Arn
 
   QuestionsTable:
     Type: AWS::DynamoDB::Table
@@ -45,6 +57,19 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "question_id"
           AttributeType: "S"
+        - AttributeName: "post_key"
+          AttributeType: "S"
+        - AttributeName: "post_count"
+          AttributeType: "N"
+      GlobalSecondaryIndexes:
+        - IndexName: "poll-index"
+          KeySchema:
+            - AttributeName: "post_key"
+              KeyType: "HASH"
+            - AttributeName: "post_count"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
       KeySchema:
         - AttributeName: "question_id"
           KeyType: "HASH"
@@ -55,18 +80,44 @@ Resources:
   PollerFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Policies:
-        - AWSLambdaExecute
+      Role: !GetAtt LambdaRole.Arn
       Handler: poller
       Runtime: go1.x
-      CodeUri: ./functions/poller
+      CodeUri: s3://bt-lambdas/poller.zip
+
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Invoke the poller every now and then"
+      ScheduleExpression: "rate(10 minutes)"
+      State: "ENABLED"
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - "PollerFunction"
+              - "Arn"
+          Id: "TargetFunctionV1"
+
+  PollerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: "PollerFunction"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "ScheduledRule"
+          - "Arn"
+
 
   PosterFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Policies:
-        - AWSLambdaExecute
+      Role: !GetAtt LambdaRole.Arn
       Handler: poster
       Runtime: go1.x
-      CodeUri: ./functions/poster
-      
+      CodeUri: s3://bt-lambdas/poster.zip
+
+  QuestionsQueue:
+    Type: AWS::SQS::Queue
