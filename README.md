@@ -15,3 +15,11 @@ Tools used:
 
 why?
 social media is often filled with negative content. if you're gonna be scrolling through instagram or twitter, here is some content that you may find helpful in connecting with people, or understanding yourself better.
+
+
+## High Level Architecture
+
+![architecture drawing here](docs/architecture.png)
+
+[View Lucid Chart file here..](https://www.lucidchart.com/documents/edit/2306ed36-223d-4cb3-9f49-2db0689fbf41)
+
