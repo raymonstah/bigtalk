@@ -32,13 +32,17 @@ func (h *Handler) handle(ctx context.Context, request events.APIGatewayProxyRequ
 		}
 	}
 
-	h.dao.Get()
-	json.Marshal()
-	return events.APIGatewayProxyResponse{
-		StatusCode:        http.StatusOK,
-		Body:              response,
-		IsBase64Encoded:   false,
+	questions, err := h.dao.List(ctx)
+	if err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}
 	}
+
+	questionsJson, err := json.Marshal(questions)
+	if err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}
+	}
+
+	return events.APIGatewayProxyResponse{Body: string(questionsJson), StatusCode: http.StatusOK}
 
 }
 

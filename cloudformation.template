@@ -6,7 +6,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AWSLambdaExecute"
-      RoleName: big-talk-lambda
+      RoleName: big-talk-poller-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -139,7 +139,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AWSLambdaExecute"
-      RoleName: big-talk-lambda
+      RoleName: big-talk-lambda-rest-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -181,16 +181,14 @@ Resources:
     Properties:
       PathPart: questions
       ParentId: !GetAtt QuestionsRestAPI.RootResourceId
-      RestApiId: !GetAtt QuestionsRestAPI.RootResourceId
+      RestApiId: !Ref QuestionsRestAPI
 
   QuestionsGetMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
-      RestApiId:
-        - !GetAtt QuestionsRestAPI.RootResourceId
-      ResourceId:
-        - !Ref QuestionsResource
+      RestApiId: !GetAtt QuestionsRestAPI.RootResourceId
+      ResourceId: !Ref QuestionsResource
       Integration:
         Type: HTTP_PROXY
         Uri: !GetAtt QuestionsRestLambda.Arn
