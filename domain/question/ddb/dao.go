@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/guregu/dynamo"
@@ -46,11 +47,27 @@ func (d *DAO) Get(ctx context.Context, questionID string) (question.Question, er
 		Consistent(true).
 		OneWithContext(ctx, &result)
 
-
 	if err != nil {
 		return question.Question{}, fmt.Errorf("unable to get question by question id ('%v'): %w", questionID, err)
 	}
 	return transform(result), nil
+}
+
+// List all questions
+func (d *DAO) List(ctx context.Context) ([]question.Question, error) {
+	var results []Question
+	err := d.questionTable.
+		Scan().
+		Consistent(true).
+		AllWithContext(ctx, &results)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list all questions %w", err)
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].CreatedAt < results[j].CreatedAt
+	})
+	return transformAll(results), nil
 }
 
 // Poll a question that hasn't been yet polled, or a random one of the next lowest count
@@ -83,15 +100,14 @@ func (d *DAO) Use(ctx context.Context, questionID string) error {
 
 // Create a new question
 func (d *DAO) Create(ctx context.Context, input question.CreateQuestionInput) (question.Question, error) {
-	now := time.Now().Unix()
+	now := time.Now().UnixNano()
 
 	q := Question{
-		QuestionID:   ksuid.New().String(),
-		PostKey:      postKey,
-		PostCount:    0,
-		Question:     input.Question,
-		CreatedAt:    now,
-		LastPostedAt: now,
+		QuestionID: ksuid.New().String(),
+		PostKey:    postKey,
+		PostCount:  0,
+		Question:   input.Question,
+		CreatedAt:  now,
 	}
 
 	err := d.questionTable.Put(q).RunWithContext(ctx)
@@ -110,4 +126,12 @@ func transform(input Question) question.Question {
 		CreatedAt:    input.CreatedAt,
 		LastPostedAt: input.LastPostedAt,
 	}
+}
+
+func transformAll(input []Question) []question.Question {
+	var results []question.Question
+	for _, q := range input {
+		results = append(results, transform(q))
+	}
+	return results
 }

@@ -3,13 +3,13 @@ package dao
 import (
 	"context"
 	"errors"
-	"testing"
-
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
 	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/tj/assert"
+	"testing"
 )
 
 func withDAO(t *testing.T, callback func(ctx context.Context, dao *DAO)) {
@@ -97,5 +97,31 @@ func TestPoller_NoQuestions(t *testing.T) {
 		isErrNotFound := errors.Is(err, dynamo.ErrNotFound)
 		assert.True(t, isErrNotFound)
 
+	})
+}
+
+func TestDAO_List(t *testing.T) {
+	withDAO(t, func(ctx context.Context, dao *DAO) {
+
+		input1 := question.CreateQuestionInput{
+			Question: "Question 1",
+		}
+		// Create the question
+		q1, err := dao.Create(ctx, input1)
+		assert.Nil(t, err)
+
+		input2 := question.CreateQuestionInput{
+			Question: "Question 2",
+		}
+		// Create the question
+		q2, err := dao.Create(ctx, input2)
+		assert.Nil(t, err)
+
+		allquestions, err := dao.List(ctx)
+		fmt.Println(allquestions)
+		assert.Nil(t, err)
+		assert.Len(t, allquestions, 2)
+		assert.Equal(t, q1.QuestionID, allquestions[0].QuestionID)
+		assert.Equal(t, q2.QuestionID, allquestions[1].QuestionID)
 	})
 }

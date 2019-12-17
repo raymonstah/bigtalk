@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -58,7 +59,7 @@ func main() {
 	handler := Handler{
 		poller:           poller,
 		sqs:              sqsclient,
-		queueDestination: "questions-queue",
+		queueDestination: os.Getenv("QUESTIONS_QUEUE"),
 	}
 	lambda.Start(handler.handle)
 }

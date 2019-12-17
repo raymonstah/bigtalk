@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/raymonstah/bigtalk/domain/poster"
 	"github.com/raymonstah/bigtalk/domain/poster/twitter"
 	"golang.org/x/oauth2/clientcredentials"
-	"fmt"
 	"os"
 )
 
