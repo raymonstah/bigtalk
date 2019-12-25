@@ -187,9 +187,21 @@ Resources:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
-      RestApiId: !GetAtt QuestionsRestAPI.RootResourceId
+      RestApiId: !Ref QuestionsRestAPI
+      AuthorizationType: NONE
       ResourceId: !Ref QuestionsResource
-      Integration:
-        Type: HTTP_PROXY
-        Uri: !GetAtt QuestionsRestLambda.Arn
 
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS_PROXY
+        Uri: !Sub >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${QuestionsRestLambda.Arn}/invocations
+
+  QuestionApiInvokerRole:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt QuestionsRestLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub >-
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${QuestionsResource}/*/*/*

@@ -16,7 +16,7 @@ type Handler struct {
 	dao *questionDao.DAO
 }
 
-func (h *Handler) handle(ctx context.Context, request events.APIGatewayProxyRequest) events.APIGatewayProxyResponse {
+func (h *Handler) handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
 	switch request.HTTPMethod {
 	case http.MethodGet:
@@ -29,20 +29,20 @@ func (h *Handler) handle(ctx context.Context, request events.APIGatewayProxyRequ
 		// not allowed
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusMethodNotAllowed,
-		}
+		}, nil
 	}
 
 	questions, err := h.dao.List(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}, nil
 	}
 
 	questionsJson, err := json.Marshal(questions)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}, nil
 	}
 
-	return events.APIGatewayProxyResponse{Body: string(questionsJson), StatusCode: http.StatusOK}
+	return events.APIGatewayProxyResponse{Body: string(questionsJson), StatusCode: http.StatusOK}, nil
 
 }
 
