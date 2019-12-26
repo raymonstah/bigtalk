@@ -35,6 +35,8 @@ To Run:
    
    
 Things to Add:
-1. Support for first time stack upload
-2. Finish REST API
+1. Support for first time stack upload of CF stack
+2. Finish REST API (GET / DELETE)
+3. Dynamically get Twitter credentials
+
  
