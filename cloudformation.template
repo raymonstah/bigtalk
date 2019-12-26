@@ -1,5 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  BigTalkBucket:
+    Type: String
+  PollerZip:
+    Type: String
+  PosterZip:
+    Type: String
+  QuestionsRestZip:
+    Type: String
+
+
 Resources:
   PollerRole:
     Type: AWS::IAM::Role
@@ -78,12 +90,15 @@ Resources:
 
 
   PollerFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       Role: !GetAtt PollerRole.Arn
       Handler: poller
       Runtime: go1.x
-      CodeUri: s3://bt-lambdas/poller.zip
+      CodeUri:
+        Bucket: !Ref BigTalkBucket
+        Key: poller.zip
+        Version: !Ref PollerZip
       Environment:
         Variables:
           QUESTIONS_QUEUE: !GetAtt QuestionsQueue.Arn
@@ -115,24 +130,30 @@ Resources:
 
 
   PosterFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       Role: !GetAtt PollerRole.Arn
       Handler: poster
       Runtime: go1.x
-      CodeUri: s3://bt-lambdas/poster.zip
+      CodeUri:
+        Bucket: !Ref BigTalkBucket
+        Key: poster.zip
+        Version: !Ref PosterZip
 
   QuestionsQueue:
     Type: AWS::SQS::Queue
 
   # A lambda to handle CRUD on Questions
   QuestionsRestLambda:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       Role: !GetAtt QuestionsRestLambdaRole.Arn
       Handler: questions-rest
       Runtime: go1.x
-      CodeUri: s3://bt-lambdas/questions-rest.zip
+      CodeUri:
+        Bucket: !Ref BigTalkBucket
+        Key: questions-rest.zip
+        Version: !Ref QuestionsRestZip
 
   QuestionsRestLambdaRole:
     Type: AWS::IAM::Role
@@ -205,3 +226,4 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub >-
         arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${QuestionsResource}/*/*/*
+

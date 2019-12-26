@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,17 +30,20 @@ func (h *Handler) handle(ctx context.Context, request events.APIGatewayProxyRequ
 		// not allowed
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusMethodNotAllowed,
-		}, nil
+			Body:       fmt.Sprintf("%v is not allowed", request.HTTPMethod),
+		}, fmt.Errorf("%v is not allowed", request.HTTPMethod)
 	}
 
 	questions, err := h.dao.List(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}, nil
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()},
+			fmt.Errorf("unable to list questions: %w", err)
 	}
 
 	questionsJson, err := json.Marshal(questions)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()}, nil
+		return events.APIGatewayProxyResponse{StatusCode: 500, Body: err.Error()},
+			fmt.Errorf("unable to marshal message: %w", err)
 	}
 
 	return events.APIGatewayProxyResponse{Body: string(questionsJson), StatusCode: http.StatusOK}, nil
