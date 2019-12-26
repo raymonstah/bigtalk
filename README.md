@@ -9,6 +9,7 @@ Tools used:
 * Go (running on AWS Lambdas)
 * DynamoDB (for storing data)
 * Cloudformation (for managing cloud resources)
+* API Gateway (for a RESTful API)
 * Twitter API (for posting to Twitter)
 * Instagram API (for posting to Instagram)
 * AWS SAM / S3 / IAM for ops stuff
@@ -23,3 +24,17 @@ social media is often filled with negative content. if you're gonna be scrolling
 
 [View Lucid Chart file here..](https://www.lucidchart.com/documents/edit/2306ed36-223d-4cb3-9f49-2db0689fbf41)
 
+
+To Run:
+1. Build lambdas using `build/make_functions.sh`
+2. Run pipeline tool which uploads lambdas and cloudformation stack to AWS
+    ` go run build/pipeline.go --path target/artifact/resources/ -cf-directory cloudformation.template`
+    
+   This assumes that a versioned bucket is already created to hold the resources
+   see `pipeline help` for more information
+   
+   
+Things to Add:
+1. Support for first time stack upload
+2. Finish REST API
+ 

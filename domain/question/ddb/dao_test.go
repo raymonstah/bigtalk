@@ -45,7 +45,7 @@ func TestQuestion(t *testing.T) {
 
 	withDAO(t, func(ctx context.Context, dao *DAO) {
 
-		input := question.CreateQuestionInput{
+		input := question.CreateInput{
 			Question: "How are you doing today?",
 		}
 		// Create the question
@@ -65,14 +65,14 @@ func TestPoller(t *testing.T) {
 
 	withDAO(t, func(ctx context.Context, dao *DAO) {
 
-		input1 := question.CreateQuestionInput{
+		input1 := question.CreateInput{
 			Question: "Question 1",
 		}
 		// Create the question
 		q1, err := dao.Create(ctx, input1)
 		assert.Nil(t, err)
 
-		input2 := question.CreateQuestionInput{
+		input2 := question.CreateInput{
 			Question: "Question 2",
 		}
 		// Create the question
@@ -103,14 +103,14 @@ func TestPoller_NoQuestions(t *testing.T) {
 func TestDAO_List(t *testing.T) {
 	withDAO(t, func(ctx context.Context, dao *DAO) {
 
-		input1 := question.CreateQuestionInput{
+		input1 := question.CreateInput{
 			Question: "Question 1",
 		}
 		// Create the question
 		q1, err := dao.Create(ctx, input1)
 		assert.Nil(t, err)
 
-		input2 := question.CreateQuestionInput{
+		input2 := question.CreateInput{
 			Question: "Question 2",
 		}
 		// Create the question

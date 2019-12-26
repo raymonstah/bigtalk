@@ -9,11 +9,14 @@ import (
 	"github.com/guregu/dynamo"
 	"github.com/raymonstah/bigtalk/domain/question"
 	"github.com/segmentio/ksuid"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 const (
 	postKey = "postKey"
 )
+
+var validate = validator.New()
 
 // New returns a new DAO that can perform actions on the Questions entity
 func New(table dynamo.Table) *DAO {
@@ -99,7 +102,11 @@ func (d *DAO) Use(ctx context.Context, questionID string) error {
 }
 
 // Create a new question
-func (d *DAO) Create(ctx context.Context, input question.CreateQuestionInput) (question.Question, error) {
+func (d *DAO) Create(ctx context.Context, input question.CreateInput) (question.Question, error) {
+
+	if err := validate.Struct(input); err != nil {
+		return question.Question{}, err
+	}
 	now := time.Now().UnixNano()
 
 	q := Question{

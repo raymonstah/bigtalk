@@ -11,7 +11,6 @@ Parameters:
   QuestionsRestZip:
     Type: String
 
-
 Resources:
   PollerRole:
     Type: AWS::IAM::Role
@@ -27,15 +26,6 @@ Resources:
               Service: "lambda.amazonaws.com"
             Action: "sts:AssumeRole"
       Policies:
-        - PolicyName: "secrets"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - "ssm:DescribeParameter*"
-                  - "ssm:GetParameter*"
-                Effect: "Allow"
-                Resource: "*"
         - PolicyName: "dynamodb"
           PolicyDocument:
             Version: "2012-10-17"
@@ -43,11 +33,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - "dynamodb:BatchGetItem"
-                  - "dynamodb:BatchWriteItem"
-                  - "dynamodb:DeleteItem"
                   - "dynamodb:GetItem"
-                  - "dynamodb:PutItem"
-                  - "dynamodb:UpdateItem"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
                 Resource:
@@ -59,6 +45,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - "sqs:GetQueueUrl"
                   - "sqs:SendMessage"
                 Resource:
                   - !GetAtt QuestionsQueue.Arn
@@ -154,6 +141,9 @@ Resources:
         Bucket: !Ref BigTalkBucket
         Key: questions-rest.zip
         Version: !Ref QuestionsRestZip
+      Events:
+        ApiEvent:
+          Type: HttpApi
 
   QuestionsRestLambdaRole:
     Type: AWS::IAM::Role
@@ -187,43 +177,8 @@ Resources:
                   - "dynamodb:GetItem"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DeleteItem"
                 Resource:
                   - !GetAtt QuestionsTable.Arn
                   - !Sub "${QuestionsTable.Arn}/index/*"
-
-  #  QUESTIONS REST API HERE
-  QuestionsRestAPI:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Name: QuestionsApi
-
-  QuestionsResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      PathPart: questions
-      ParentId: !GetAtt QuestionsRestAPI.RootResourceId
-      RestApiId: !Ref QuestionsRestAPI
-
-  QuestionsGetMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      HttpMethod: GET
-      RestApiId: !Ref QuestionsRestAPI
-      AuthorizationType: NONE
-      ResourceId: !Ref QuestionsResource
-
-      Integration:
-        IntegrationHttpMethod: GET
-        Type: AWS_PROXY
-        Uri: !Sub >-
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${QuestionsRestLambda.Arn}/invocations
-
-  QuestionApiInvokerRole:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt QuestionsRestLambda.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub >-
-        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${QuestionsResource}/*/*/*
-

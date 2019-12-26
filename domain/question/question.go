@@ -14,13 +14,13 @@ type Question struct {
 }
 
 // CreateQuestionInput is the input used to create a new Question
-type CreateQuestionInput struct {
-	Question string
+type CreateInput struct {
+	Question string `validate:"required"`
 }
 
 // Creator allows for questions to be created
 type Creator interface {
-	Create(ctx context.Context, input CreateQuestionInput) (Question, error)
+	Create(ctx context.Context, input CreateInput) (Question, error)
 }
 
 // Poller is an interface that helps retrieves questions

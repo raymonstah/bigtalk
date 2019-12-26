@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,9 +19,9 @@ import (
 
 // Handler contains everything needed to execute this lambda
 type Handler struct {
-	poller           question.Poller
-	sqs              sqsiface.SQSAPI
-	queueDestination string
+	poller   question.Poller
+	sqs      sqsiface.SQSAPI
+	queueArn string
 }
 
 // Handle polls for a question and returns it
@@ -33,14 +34,29 @@ func (h *Handler) handle(ctx context.Context) error {
 		}
 		return fmt.Errorf("unable to poll for new question: %w", err)
 	}
-	_, err = h.sqs.SendMessage(&sqs.SendMessageInput{
+
+	queueName := getQueueName(h.queueArn)
+	queueUrlOutput, err := h.sqs.GetQueueUrlWithContext(ctx, &sqs.GetQueueUrlInput{
+		QueueName: aws.String(queueName),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get queue url from queue name %v: %w", queueName, err)
+	}
+
+	_, err = h.sqs.SendMessageWithContext(ctx, &sqs.SendMessageInput{
 		MessageBody: aws.String(q.Question),
-		QueueUrl:    aws.String(h.queueDestination),
+		QueueUrl:    queueUrlOutput.QueueUrl,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to send message to sqs: %w", err)
 	}
 	return nil
+}
+
+// extracts queue name from queue arn
+func getQueueName(arn string) string {
+	lastIndexOfColon := strings.LastIndex(arn, ":")
+	return arn[lastIndexOfColon+1:]
 }
 
 func createQuestionPoller(session *session.Session, questionTableName string) question.Poller {
@@ -57,9 +73,9 @@ func main() {
 	poller := createQuestionPoller(s, "questions")
 	sqsclient := sqs.New(s)
 	handler := Handler{
-		poller:           poller,
-		sqs:              sqsclient,
-		queueDestination: os.Getenv("QUESTIONS_QUEUE"),
+		poller:   poller,
+		sqs:      sqsclient,
+		queueArn: os.Getenv("QUESTIONS_QUEUE"),
 	}
 	lambda.Start(handler.handle)
 }
