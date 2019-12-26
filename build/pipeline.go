@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"sort"
@@ -85,7 +86,8 @@ func action(_ *cli.Context) error {
 	)
 
 	if config.skipLambda {
-		// get lambda ids
+		log.Fatal("whoops, skip lambda not implemented")
+		// todo get lambda ids
 	}
 
 	lambdaVersions, err := uploadLambdas(ctx, s3API, config.dir)

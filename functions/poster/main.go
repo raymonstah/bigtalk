@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/raymonstah/bigtalk/domain/poster"
 	"github.com/raymonstah/bigtalk/domain/poster/twitter"
@@ -18,11 +19,17 @@ type Handler struct {
 	poster poster.Poster
 }
 
-func (h *Handler) handle(ctx context.Context, input Event) error {
-	err := h.poster.Post(ctx, []byte(input.Question))
-	if err != nil {
-		return fmt.Errorf("error posting: %w", err)
+func (h *Handler) handle(ctx context.Context, event events.SNSEvent) error {
+	for _, record := range event.Records{
+		message := record.SNS.Message
+		fmt.Println(message)
+		break
+		//err := h.poster.Post(ctx, []byte(event.Question))
+		//if err != nil {
+		//	return fmt.Errorf("error posting: %w", err)
+		//}
 	}
+
 	return nil
 }
 

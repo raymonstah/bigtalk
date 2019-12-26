@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"os"
 	"strings"
 
@@ -20,8 +20,8 @@ import (
 // Handler contains everything needed to execute this lambda
 type Handler struct {
 	poller   question.Poller
-	sqs      sqsiface.SQSAPI
-	queueArn string
+	snsAPI   snsiface.SNSAPI
+	topicArn string
 }
 
 // Handle polls for a question and returns it
@@ -35,20 +35,12 @@ func (h *Handler) handle(ctx context.Context) error {
 		return fmt.Errorf("unable to poll for new question: %w", err)
 	}
 
-	queueName := getQueueName(h.queueArn)
-	queueUrlOutput, err := h.sqs.GetQueueUrlWithContext(ctx, &sqs.GetQueueUrlInput{
-		QueueName: aws.String(queueName),
+	_, err = h.snsAPI.PublishWithContext(ctx, &sns.PublishInput{
+		Message:  aws.String(q.Question),
+		TopicArn: aws.String(h.topicArn),
 	})
 	if err != nil {
-		return fmt.Errorf("unable to get queue url from queue name %v: %w", queueName, err)
-	}
-
-	_, err = h.sqs.SendMessageWithContext(ctx, &sqs.SendMessageInput{
-		MessageBody: aws.String(q.Question),
-		QueueUrl:    queueUrlOutput.QueueUrl,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to send message to sqs: %w", err)
+		return fmt.Errorf("unable to publish message to sns topic %v: %w", h.topicArn, err)
 	}
 	return nil
 }
@@ -71,11 +63,11 @@ func main() {
 
 	s := session.Must(session.NewSession(aws.NewConfig()))
 	poller := createQuestionPoller(s, "questions")
-	sqsclient := sqs.New(s)
+	snsAPI := sns.New(s)
 	handler := Handler{
 		poller:   poller,
-		sqs:      sqsclient,
-		queueArn: os.Getenv("QUESTIONS_QUEUE"),
+		snsAPI:   snsAPI,
+		topicArn: os.Getenv("QUESTIONS_TOPIC"),
 	}
 	lambda.Start(handler.handle)
 }

@@ -12,6 +12,7 @@ Parameters:
     Type: String
 
 Resources:
+
   PollerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -39,16 +40,15 @@ Resources:
                 Resource:
                   - !GetAtt QuestionsTable.Arn
                   - !Sub "${QuestionsTable.Arn}/index/*"
-        - PolicyName: "sqs"
+        - PolicyName: "sns"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "sqs:GetQueueUrl"
-                  - "sqs:SendMessage"
+                  - "sns:Publish"
                 Resource:
-                  - !GetAtt QuestionsQueue.Arn
+                  - !Ref QuestionsTopic
 
   QuestionsTable:
     Type: AWS::DynamoDB::Table
@@ -88,7 +88,7 @@ Resources:
         Version: !Ref PollerZip
       Environment:
         Variables:
-          QUESTIONS_QUEUE: !GetAtt QuestionsQueue.Arn
+          QUESTIONS_TOPIC: !Ref QuestionsTopic
 
   ScheduledRule:
     Type: AWS::Events::Rule
@@ -115,7 +115,28 @@ Resources:
           - "ScheduledRule"
           - "Arn"
 
+  QuestionsTopic:
+    Type: AWS::SNS::Topic
 
+  # allow poller lambda to publish to SNS
+  QuestionsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Id: "Policy"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "AllowEvents"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sns:Publish"
+            Resource: !Ref QuestionsTopic
+      Topics:
+        - !Ref QuestionsTopic
+
+
+  # Poster starts here
   PosterFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -127,8 +148,23 @@ Resources:
         Key: poster.zip
         Version: !Ref PosterZip
 
-  QuestionsQueue:
-    Type: AWS::SQS::Queue
+  # allow Poster to be invoked by SNS
+  PosterFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt PosterFunction.Arn
+      Principal: "sns.amazonaws.com"
+      SourceArn: !Ref QuestionsTopic
+
+  # subscribes the poster function to SNS topic
+  PosterFunctionSub:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt PosterFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref QuestionsTopic
+
 
   # A lambda to handle CRUD on Questions
   QuestionsRestLambda:
