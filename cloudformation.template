@@ -147,6 +147,10 @@ Resources:
         Bucket: !Ref BigTalkBucket
         Key: poster.zip
         Version: !Ref PosterZip
+      Environment:
+        Variables:
+          TWITTER_KEY: "SET_ME_PLEASE"
+          TWITTER_SECRET: "SET_ME_PLEASE"
 
   # allow Poster to be invoked by SNS
   PosterFunctionPermission:

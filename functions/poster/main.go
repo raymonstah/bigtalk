@@ -21,13 +21,11 @@ type Handler struct {
 
 func (h *Handler) handle(ctx context.Context, event events.SNSEvent) error {
 	for _, record := range event.Records{
-		message := record.SNS.Message
-		fmt.Println(message)
-		break
-		//err := h.poster.Post(ctx, []byte(event.Question))
-		//if err != nil {
-		//	return fmt.Errorf("error posting: %w", err)
-		//}
+		question := record.SNS.Message
+		err := h.poster.Post(ctx, []byte(question))
+		if err != nil {
+			return fmt.Errorf("error posting: %w", err)
+		}
 	}
 
 	return nil
