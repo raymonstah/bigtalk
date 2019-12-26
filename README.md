@@ -39,4 +39,8 @@ Things to Add:
 2. Finish REST API (GET / DELETE)
 3. Dynamically get Twitter credentials
 
+
+
+View results [here](https://twitter.com/createbigtalk)
+
  
