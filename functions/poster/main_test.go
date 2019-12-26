@@ -40,8 +40,3 @@ func TestHandle(t *testing.T) {
 	}})
 	assert.Nil(t, err)
 }
-
-func TestCreatePoster(t *testing.T) {
-	p := createPoster(context.Background(), "key", "secret")
-	assert.NotNil(t, p)
-}

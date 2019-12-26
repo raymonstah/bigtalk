@@ -2,11 +2,10 @@ package twitter
 
 import (
 	"context"
-	"github.com/dghubble/go-twitter/twitter"
 	"fmt"
-	"net/http"
+	"github.com/dghubble/oauth1"
+	"github.com/dghubble/go-twitter/twitter"
 )
-
 
 // Twitter is an implemention of the Poster interface
 type Twitter struct {
@@ -14,17 +13,20 @@ type Twitter struct {
 }
 
 // New creates a new Poster
-func New(httpclient *http.Client) Twitter {
+func New(consumerKey, consumerSecret, accessToken, accessSecret string) Twitter {
+
+	config := oauth1.NewConfig(consumerKey, consumerSecret)
+	token := oauth1.NewToken(accessToken, accessSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
 
 	// Twitter client
-	client := twitter.NewClient(httpclient)
+	client := twitter.NewClient(httpClient)
 
 	return Twitter{
 		client: client,
 	}
 
 }
-
 
 // Post a tweet!
 func (t Twitter) Post(ctx context.Context, content []byte) error {

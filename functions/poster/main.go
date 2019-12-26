@@ -7,7 +7,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/raymonstah/bigtalk/domain/poster"
 	"github.com/raymonstah/bigtalk/domain/poster/twitter"
-	"golang.org/x/oauth2/clientcredentials"
+	"github.com/urfave/cli"
+	"log"
 	"os"
 )
 
@@ -20,7 +21,7 @@ type Handler struct {
 }
 
 func (h *Handler) handle(ctx context.Context, event events.SNSEvent) error {
-	for _, record := range event.Records{
+	for _, record := range event.Records {
 		question := record.SNS.Message
 		err := h.poster.Post(ctx, []byte(question))
 		if err != nil {
@@ -31,27 +32,71 @@ func (h *Handler) handle(ctx context.Context, event events.SNSEvent) error {
 	return nil
 }
 
-func createPoster(ctx context.Context, key, secret string) poster.Poster {
-
-	// oauth2 configures a client that uses app credentials to keep a fresh token
-	config := &clientcredentials.Config{
-		ClientID:     key,
-		ClientSecret: secret,
-		TokenURL:     "https://api.twitter.com/oauth2/token",
-	}
-	// http.Client will automatically authorize Requests
-	httpClient := config.Client(ctx)
-
-	return twitter.New(httpClient)
-
+var runNow bool
+var twitterConf struct {
+	consumerKey    string
+	consumerSecret string
+	accessToken    string
+	accessSecret   string
 }
 
 func main() {
 
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:        "now",
+			Usage:       "run import now from console",
+			Destination: &runNow,
+		},
+		cli.StringFlag{
+			Name:        "twitter-consumer-key",
+			EnvVar:      "TWITTER_CONSUMER_KEY",
+			Required:    true,
+			Destination: &twitterConf.consumerKey,
+		},
+		cli.StringFlag{
+			Name:        "twitter-consumer-secret",
+			EnvVar:      "TWITTER_CONSUMER_SECRET",
+			Required:    true,
+			Destination: &twitterConf.consumerSecret,
+		},
+		cli.StringFlag{
+			Name:        "twitter-access-token",
+			EnvVar:      "TWITTER_ACCESS_TOKEN",
+			Required:    true,
+			Destination: &twitterConf.accessToken,
+		},
+		cli.StringFlag{
+			Name:        "twitter-access-secret",
+			EnvVar:      "TWITTER_ACCESS_SECRET",
+			Required:    true,
+			Destination: &twitterConf.accessSecret,
+		},
+	}
+	app.Action = action
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+}
+
+func action(_ *cli.Context) error {
 	ctx := context.Background()
-	twitterKey := os.Getenv("TWITTER_KEY")
-	twitterSecret := os.Getenv("TWITTER_SECRET")
-	p := createPoster(ctx, twitterKey, twitterSecret)
+
+	p := twitter.New(twitterConf.consumerKey, twitterConf.consumerSecret, twitterConf.accessToken, twitterConf.accessSecret)
 	handler := Handler{poster: p}
+	if runNow {
+		return handler.handle(ctx, events.SNSEvent{Records: []events.SNSEventRecord{
+			{
+				SNS: events.SNSEntity{
+					Message: "How are you doing today?",
+				},
+			},
+		}})
+	}
+
 	lambda.Start(handler.handle)
+	return nil
 }

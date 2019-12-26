@@ -94,7 +94,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: "Invoke the poller every now and then"
-      ScheduleExpression: "rate(10 minutes)"
+      ScheduleExpression: "rate(1 day)"
       State: "ENABLED"
       Targets:
         - Arn:
@@ -149,8 +149,10 @@ Resources:
         Version: !Ref PosterZip
       Environment:
         Variables:
-          TWITTER_KEY: "SET_ME_PLEASE"
-          TWITTER_SECRET: "SET_ME_PLEASE"
+          TWITTER_CONSUMER_KEY: "SET_ME_PLEASE"
+          TWITTER_CONSUMER_SECRET: "SET_ME_PLEASE"
+          TWITTER_ACCESS_TOKEN: "SET_ME_PLEASE"
+          TWITTER_ACCESS_SECRET: "SET_ME_PLEASE"
 
   # allow Poster to be invoked by SNS
   PosterFunctionPermission:
