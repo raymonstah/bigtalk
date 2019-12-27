@@ -37,6 +37,7 @@ Resources:
                   - "dynamodb:GetItem"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
+                  - "dynamodb:UpdateItem"
                 Resource:
                   - !GetAtt QuestionsTable.Arn
                   - !Sub "${QuestionsTable.Arn}/index/*"
