@@ -90,8 +90,13 @@ func (h *Handler) handlePost(ctx context.Context, body string) (events.APIGatewa
 	return events.APIGatewayProxyResponse{StatusCode: http.StatusOK, Body: string(qJson)}, nil
 }
 
-func (h *Handler) handleDelete(ctx context.Context, s string) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{}, nil
+func (h *Handler) handleDelete(ctx context.Context, id string) (events.APIGatewayProxyResponse, error) {
+	if err := h.dao.Delete(ctx, id); err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError, Body: "error deleting question"},
+			fmt.Errorf("error deleting question id %v: %w", id, err)
+	}
+
+	return events.APIGatewayProxyResponse{StatusCode: http.StatusOK}, nil
 }
 
 func emptyList() (events.APIGatewayProxyResponse, error) {

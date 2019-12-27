@@ -124,6 +124,15 @@ func (d *DAO) Create(ctx context.Context, input question.CreateInput) (question.
 	return transform(q), nil
 }
 
+func (d *DAO) Delete(ctx context.Context, id string) error {
+	err := d.questionTable.Delete("question_id", id).
+		RunWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("error deleting question by id %v: %w", id, err)
+	}
+	return nil
+}
+
 // a little bit of duplication is better than the wrong abstraction
 func transform(input Question) question.Question {
 	return question.Question{

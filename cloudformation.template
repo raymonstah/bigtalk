@@ -49,6 +49,15 @@ Resources:
                   - "sns:Publish"
                 Resource:
                   - !Ref QuestionsTopic
+        - PolicyName: "secrets"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - "arn:aws:secretsmanager:us-west-2:{AWS::AccountId}:secret:bt-secrets*"
 
   QuestionsTable:
     Type: AWS::DynamoDB::Table
@@ -147,12 +156,6 @@ Resources:
         Bucket: !Ref BigTalkBucket
         Key: poster.zip
         Version: !Ref PosterZip
-      Environment:
-        Variables:
-          TWITTER_CONSUMER_KEY: "SET_ME_PLEASE"
-          TWITTER_CONSUMER_SECRET: "SET_ME_PLEASE"
-          TWITTER_ACCESS_TOKEN: "SET_ME_PLEASE"
-          TWITTER_ACCESS_SECRET: "SET_ME_PLEASE"
 
   # allow Poster to be invoked by SNS
   PosterFunctionPermission:

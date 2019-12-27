@@ -28,4 +28,5 @@ type Poller interface {
 	// Poll a question that hasn't been polled yet
 	// If all have been polled, get a random one
 	Poll(ctx context.Context) (Question, error)
+	Use(ctx context.Context, questionID string) error
 }

@@ -26,6 +26,10 @@ func (m mockPoller) Poll(ctx context.Context) (question.Question, error) {
 	}, nil
 }
 
+func (m mockPoller) Use(ctx context.Context, _ string) error {
+	return nil
+}
+
 type mockSNS struct{ snsiface.SNSAPI }
 
 func (m *mockSNS) PublishWithContext(aws.Context, *sns.PublishInput, ...request.Option) (*sns.PublishOutput, error) {

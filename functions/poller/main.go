@@ -42,6 +42,12 @@ func (h *Handler) handle(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to publish message to sns topic %v: %w", h.topicArn, err)
 	}
+
+	// mark the question as used
+	if err = h.poller.Use(ctx, q.QuestionID); err != nil {
+		return fmt.Errorf("unable to mark question as used: %w", err)
+	}
+
 	return nil
 }
 

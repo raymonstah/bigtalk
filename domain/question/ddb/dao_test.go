@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
 	"github.com/raymonstah/bigtalk/domain/question"
+	"github.com/segmentio/ksuid"
 	"github.com/tj/assert"
 	"testing"
 )
@@ -124,4 +125,36 @@ func TestDAO_List(t *testing.T) {
 		assert.Equal(t, q1.QuestionID, allquestions[0].QuestionID)
 		assert.Equal(t, q2.QuestionID, allquestions[1].QuestionID)
 	})
+}
+
+func TestDAO_Delete_Idempodent(t *testing.T) {
+	withDAO(t, func(ctx context.Context, dao *DAO) {
+		err := dao.Delete(ctx, ksuid.New().String())
+		assert.Nil(t, err)
+	})
+
+}
+
+func TestDAO_Delete(t *testing.T) {
+	withDAO(t, func(ctx context.Context, dao *DAO) {
+
+		input1 := question.CreateInput{
+			Question: "Question 1",
+		}
+		// Create the question
+		q1, err := dao.Create(ctx, input1)
+		assert.Nil(t, err)
+
+		// verify that the question exists
+		_, err = dao.Get(ctx, q1.QuestionID)
+		assert.Nil(t, err)
+
+		err = dao.Delete(ctx, q1.QuestionID)
+		assert.Nil(t, err)
+
+		// verify that the question is deleted
+		_, err = dao.Get(ctx, q1.QuestionID)
+		assert.NotNil(t, err)
+	})
+
 }
